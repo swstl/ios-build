@@ -1,0 +1,19 @@
+name: ios
+on: [push, workflow_dispatch]
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          brew install xcodegen
+          xcodegen generate
+          xcodebuild -project didrikstad.xcodeproj -scheme didrikstad -configuration Release \
+            -sdk iphoneos -derivedDataPath build CODE_SIGNING_ALLOWED=NO build
+          mkdir Payload
+          cp -r build/Build/Products/Release-iphoneos/didrikstad.app Payload/
+          zip -r didrikstad.ipa Payload
+      - uses: actions/upload-artifact@v4
+        with:
+          name: didrikstad
+          path: didrikstad.ipa
