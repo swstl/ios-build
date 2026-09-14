@@ -7,16 +7,20 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          repository: swstl/ios-app
+          token: ${{ secrets.APP_REPO_TOKEN }}
       - run: |
           brew install xcodegen
           xcodegen generate
-          xcodebuild -project didrikstad.xcodeproj -scheme didrikstad -configuration Release \
+          xcodebuild -quiet -project didrikstad.xcodeproj -scheme didrikstad -configuration Release \
             -sdk iphoneos -derivedDataPath build CODE_SIGNING_ALLOWED=NO build
           mkdir Payload
           cp -r build/Build/Products/Release-iphoneos/didrikstad.app Payload/
-          zip -r didrikstad.ipa Payload
+          zip -qr didrikstad.ipa Payload
       - run: |
-          gh release delete latest --yes --cleanup-tag || true
-          gh release create latest didrikstad.ipa --target "$GITHUB_SHA" --title "Latest build" --notes "Built from $GITHUB_SHA"
+          gh release delete latest --repo "$GITHUB_REPOSITORY" --yes --cleanup-tag || true
+          gh release create latest didrikstad.ipa --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
+            --title "Latest build" --notes "Built from ios-app $(git rev-parse --short HEAD)"
         env:
           GH_TOKEN: ${{ github.token }}
