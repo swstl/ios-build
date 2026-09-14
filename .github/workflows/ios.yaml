@@ -11,6 +11,7 @@ jobs:
           repository: swstl/ios-app
           token: ${{ secrets.APP_REPO_TOKEN }}
       - run: |
+          swiftc didrikstad/Curl.swift checks/main.swift -o curlcheck && ./curlcheck
           brew install xcodegen
           xcodegen generate
           xcodebuild -quiet -project didrikstad.xcodeproj -scheme didrikstad -configuration Release \
