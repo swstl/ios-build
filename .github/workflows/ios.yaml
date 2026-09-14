@@ -3,6 +3,8 @@ on: [push, workflow_dispatch]
 jobs:
   build:
     runs-on: macos-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
       - run: |
@@ -13,7 +15,8 @@ jobs:
           mkdir Payload
           cp -r build/Build/Products/Release-iphoneos/didrikstad.app Payload/
           zip -r didrikstad.ipa Payload
-      - uses: actions/upload-artifact@v4
-        with:
-          name: didrikstad
-          path: didrikstad.ipa
+      - run: |
+          gh release delete latest --yes --cleanup-tag || true
+          gh release create latest didrikstad.ipa --target "$GITHUB_SHA" --title "Latest build" --notes "Built from $GITHUB_SHA"
+        env:
+          GH_TOKEN: ${{ github.token }}
