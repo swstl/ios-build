@@ -11,17 +11,19 @@ jobs:
           repository: swstl/ios-app
           token: ${{ secrets.APP_REPO_TOKEN }}
       - run: |
-          swiftc didrikstad/Curl.swift checks/main.swift -o curlcheck && ./curlcheck
+          APP=$(sed -n 's/^name: *//p' project.yml | head -1)
+          echo "APP=$APP" >> "$GITHUB_ENV"
+          swiftc "$(find . -name Curl.swift | head -1)" checks/main.swift -o curlcheck && ./curlcheck
           brew install xcodegen
           xcodegen generate
-          xcodebuild -quiet -project didrikstad.xcodeproj -scheme didrikstad -configuration Release \
+          xcodebuild -quiet -project "$APP.xcodeproj" -scheme "$APP" -configuration Release \
             -sdk iphoneos -derivedDataPath build CODE_SIGNING_ALLOWED=NO build
           mkdir Payload
-          cp -r build/Build/Products/Release-iphoneos/didrikstad.app Payload/
-          zip -qr didrikstad.ipa Payload
+          cp -r "build/Build/Products/Release-iphoneos/$APP.app" Payload/
+          zip -qr "$APP.ipa" Payload
       - run: |
           gh release delete latest --repo "$GITHUB_REPOSITORY" --yes --cleanup-tag || true
-          gh release create latest didrikstad.ipa --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
+          gh release create latest "$APP.ipa" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
             --title "Latest build" --notes "Built from ios-app $(git rev-parse --short HEAD)"
         env:
           GH_TOKEN: ${{ github.token }}
