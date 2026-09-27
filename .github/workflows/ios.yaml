@@ -13,7 +13,7 @@ jobs:
       - run: |
           APP=$(sed -n 's/^name: *//p' project.yml | head -1)
           echo "APP=$APP" >> "$GITHUB_ENV"
-          swiftc $(grep -rL '@main' --include='*.swift' "$APP") checks/main.swift -o curlcheck && ./curlcheck
+          swiftc $(grep -rL 'import SwiftUI' --include='*.swift' apps) checks/main.swift -o curlcheck && ./curlcheck
           brew install xcodegen
           xcodegen generate
           xcodebuild -quiet -project "$APP.xcodeproj" -scheme "$APP" -configuration Release \
