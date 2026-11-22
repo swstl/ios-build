@@ -17,19 +17,29 @@ jobs:
           APP=$(sed -n 's/^name: *//p' pubspec.yaml | head -1)
           echo "APP=$APP" >> "$GITHUB_ENV"
           flutter test
+          if [ -n "$ANDROID_KEYSTORE" ]; then
+            mkdir -p ~/.android
+            echo "$ANDROID_KEYSTORE" | base64 --decode > ~/.android/debug.keystore
+          fi
+          flutter build apk --release
+          cp build/app/outputs/flutter-apk/app-release.apk "$APP.apk"
           flutter build ios --release --no-codesign
           mkdir Payload
           cp -r build/ios/iphoneos/Runner.app Payload/
           zip -qry "$APP.ipa" Payload
+        env:
+          ANDROID_KEYSTORE: ${{ secrets.ANDROID_KEYSTORE }}
       - if: github.ref == 'refs/heads/main'
         run: |
           gh release delete latest --repo "$GITHUB_REPOSITORY" --yes --cleanup-tag || true
-          gh release create latest "$APP.ipa" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
+          gh release create latest "$APP.ipa" "$APP.apk" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
             --title "Latest build" --notes "Built from ios-app $(git rev-parse --short HEAD)"
         env:
           GH_TOKEN: ${{ github.token }}
       - if: github.ref != 'refs/heads/main'
         uses: actions/upload-artifact@v4
         with:
-          name: ipa
-          path: ${{ env.APP }}.ipa
+          name: app
+          path: |
+            ${{ env.APP }}.ipa
+            ${{ env.APP }}.apk
